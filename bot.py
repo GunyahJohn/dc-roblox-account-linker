@@ -118,48 +118,48 @@ async def unlink_roblox(interaction: discord.Interaction):
 
 @bot.tree.command(name="claim-roles", description="Claim your roles based on your Roblox gamepasses.")
 async def claim_roles(interaction: discord.Interaction):
-    embed = discord.Embed(color=discord.Color.blue())
     discord_id = str(interaction.user.id)
 
     if discord_id not in linked_accounts["discord_to_roblox"]:
-        embed.title = "❌ Not Linked"
-        embed.description = "You need to link your Roblox account first using `/link-roblox`!"
-        embed.color = discord.Color.red()
+        embed = discord.Embed(
+            title="❌ Not Linked",
+            description="You need to link your Roblox account first using `/link-roblox`!",
+            color=discord.Color.red()
+        )
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
-    # Defer since multiple Roblox API calls may take a moment (avoids interaction timeout)
     await interaction.response.defer(ephemeral=True)
 
-    roblox_id = linked_accounts["discord_to_roblox"][discord_id]
+    # Fetch as Member so .roles and .add_roles() work
+    member = interaction.guild.get_member(interaction.user.id)
+    if member is None:
+        member = await interaction.guild.fetch_member(interaction.user.id)
 
+    roblox_id = linked_accounts["discord_to_roblox"][discord_id]
     added_roles = []
-    already_has_roles = []
-    missing_gamepasses = []
 
     for mapping in config["gamepass_roles"]:
         gamepass_id = mapping["gamepass_id"]
         role_id = mapping["role_id"]
         description = mapping["description"]
+
         role = interaction.guild.get_role(role_id)
         if role is None:
             continue
-        if role in interaction.user.roles:
-            already_has_roles.append(description)
+        if role in member.roles:
             continue
         if await has_gamepass(roblox_id, gamepass_id):
-            await interaction.user.add_roles(role)
+            await member.add_roles(role)
             added_roles.append(description)
-        else:
-            missing_gamepasses.append(description)
 
+    embed = discord.Embed(color=discord.Color.blue())
     embed.title = "🎮 Role Claim"
     if added_roles:
         embed.description = "✅ Successfully claimed your roles!\n" + "\n".join(f"• {d}" for d in added_roles)
         embed.color = discord.Color.green()
     else:
-        embed.description = "ℹ️ You have no roles to claim."
-        embed.color = discord.Color.blue()
+        embed.description = "ℹ️ You have no new roles to claim."
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
