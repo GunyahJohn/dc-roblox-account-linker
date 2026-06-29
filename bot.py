@@ -13,8 +13,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 linked_accounts_file = "linked_accounts.json"
 ROBLOX_API_URL = "https://inventory.roblox.com/v1/users/{user_id}/items/GamePass/{gamepass_id}"
 CONFIG_FILE = "config.json"
-ADMIN_ROLE_NAME = "Y5 (owner)"  # Set your admin role name
-OWNER_ID = 1322627642746339432  # Replace with your Discord user ID
+ADMIN_ROLE_NAME = "Owner"  # Set your admin role name
+OWNER_ID = 1201344036829671547  # Replace with your Discord user ID
 
 # Load config
 try:
