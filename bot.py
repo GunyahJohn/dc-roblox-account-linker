@@ -15,6 +15,7 @@ ROBLOX_API_URL = "https://inventory.roblox.com/v1/users/{user_id}/items/GamePass
 CONFIG_FILE = "config.json"
 ADMIN_ROLE_NAME = "Owner"  # Set your admin role name
 OWNER_ID = 1201344036829671547  # Replace with your Discord user ID
+API_URL = "https://acgunyahdevv696969.pythonanywhere.com"
 
 # Load config
 try:
@@ -165,6 +166,38 @@ async def claim_roles(interaction: discord.Interaction):
 
 
 # ----------- ADMIN COMMANDS -----------
+
+@bot.tree.command(name="generate tokens", description="Generate token Pair")
+async def login(interaction: discord.Interaction, username: str):
+    try:
+        res = requests.post(
+            f"{API_URL}/bearer/generate",
+            json={"username": username},
+            timeout=10
+        )
+
+        data = res.json()
+
+        if "token" in data:
+            user_tokens[interaction.user.id] = data["token"]
+            await interaction.response.send_message(
+                f"Token:\n```{data['token']}```",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(f"{data}", ephemeral=True)
+
+        if "refresh" in data:
+            user_tokens[interaction.user.id] = data["refresh"]
+            await interaction.response.send_message(
+                f"refresh:\n```{data['refresh']}```",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(f"{data}", ephemeral=True)
+    
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
 
 @bot.tree.command(name="list-linked", description="(Admin) List all linked accounts.")
 async def list_linked(interaction: discord.Interaction):
