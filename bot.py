@@ -167,7 +167,7 @@ async def claim_roles(interaction: discord.Interaction):
 
 
 # ----------- ADMIN COMMANDS -----------
-@bot.tree.command(name="token gen", description="Generate token Pair")
+@bot.tree.command(name="token-gen", description="Generate token Pair")
 async def login(interaction: discord.Interaction, username: str):
     await interaction.response.defer(ephemeral=True)
 
