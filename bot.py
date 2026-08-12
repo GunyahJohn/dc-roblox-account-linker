@@ -15,7 +15,8 @@ ROBLOX_API_URL = "https://inventory.roblox.com/v1/users/{user_id}/items/GamePass
 CONFIG_FILE = "config.json"
 ADMIN_ROLE_NAME = "Owner"  # Set your admin role name
 OWNER_ID = 1201344036829671547  # Replace with your Discord user ID
-API_URL = "https://acgunyahdevv696969.pythonanywhere.com"
+API_URL = "https://YOURUSERNAME.pythonanywhere.com"
+GENERATE_ENDPOINT = "/bearer/generate"
 
 # Load config
 try:
@@ -166,38 +167,73 @@ async def claim_roles(interaction: discord.Interaction):
 
 
 # ----------- ADMIN COMMANDS -----------
-
-@bot.tree.command(name="generate tokens", description="Generate token Pair")
+@bot.tree.command(name="Generate tokens", description="Generate token Pair")
 async def login(interaction: discord.Interaction, username: str):
+    await interaction.response.defer(ephemeral=True)
+
     try:
-        res = requests.post(
-            f"{API_URL}/bearer/generate",
+        response = requests.post(
+            f"{API_URL}{GENERATE_ENDPOINT}",
             json={"username": username},
-            timeout=10
+            timeout=15
         )
 
-        data = res.json()
-
-        if "token" in data:
-            user_tokens[interaction.user.id] = data["token"]
-            await interaction.response.send_message(
-                f"Token:\n```{data['token']}```",
+        try:
+            data = response.json()
+        except ValueError:
+            await interaction.followup.send(
+                f"❌ Backend returned invalid JSON. HTTP status: {response.status_code}",
                 ephemeral=True
             )
-        else:
-            await interaction.response.send_message(f"{data}", ephemeral=True)
+            return
 
-        if "refresh" in data:
-            user_tokens[interaction.user.id] = data["refresh"]
-            await interaction.response.send_message(
-                f"refresh:\n```{data['refresh']}```",
+        if response.status_code != 200:
+            await interaction.followup.send(
+                f"❌ Backend error:\n```json\n{data}\n```",
                 ephemeral=True
             )
-        else:
-            await interaction.response.send_message(f"{data}", ephemeral=True)
-    
+            return
+
+        bearer_token = data.get("token")
+        refresh_token = data.get("refresh_token")
+
+        if not bearer_token or not refresh_token:
+            await interaction.followup.send(
+                "❌ Backend did not return both tokens.",
+                ephemeral=True
+            )
+            return
+
+        await interaction.followup.send(
+            f"✅ **Login successful for `{username}`**\n\n"
+            f"**Bearer Token:**\n```text\n{bearer_token}\n```\n"
+            f"**Refresh Token:**\n```text\n{refresh_token}\n```",
+            ephemeral=True
+        )
+
+    except requests.exceptions.Timeout:
+        await interaction.followup.send(
+            "❌ The PythonAnywhere backend timed out.",
+            ephemeral=True
+        )
+
+    except requests.exceptions.ConnectionError:
+        await interaction.followup.send(
+            "❌ Could not connect to the PythonAnywhere backend.",
+            ephemeral=True
+        )
+
+    except requests.RequestException as e:
+        await interaction.followup.send(
+            f"❌ Backend request failed:\n`{e}`",
+            ephemeral=True
+        )
+
     except Exception as e:
-        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        await interaction.followup.send(
+            f"❌ Bot error:\n`{e}`",
+            ephemeral=True
+        )
 
 @bot.tree.command(name="list-linked", description="(Admin) List all linked accounts.")
 async def list_linked(interaction: discord.Interaction):
